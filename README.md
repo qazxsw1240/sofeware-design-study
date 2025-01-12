@@ -1,2 +1,3 @@
-# sofeware-design-study
-Examples for software design sutdy
+# Software Design Study
+
+Examples for software design study
