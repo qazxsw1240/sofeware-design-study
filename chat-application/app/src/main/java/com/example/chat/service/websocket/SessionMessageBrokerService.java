@@ -1,7 +1,14 @@
 package com.example.chat.service.websocket;
 
+import com.example.chat.event.websocket.WebSocketJsonMessageReceiveListener;
+import com.example.chat.event.websocket.WebSocketTextMessageReceiveListener;
 import com.example.chat.repository.SessionRepository;
+import com.example.chat.websocket.WebSocketEventListenerManager;
+import com.example.chat.websocket.WebSocketHandlerImpl;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import jakarta.annotation.PostConstruct;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -12,6 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -19,11 +28,14 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
-public class SessionMessageBrokerService implements DisposableBean {
+public class SessionMessageBrokerService
+        implements WebSocketTextMessageReceiveListener,
+                   DisposableBean {
 
     private static final Logger logger = LogManager.getLogger(SessionMessageBrokerService.class);
 
     private final SessionRepository sessionRepository;
+    private final WebSocketEventListenerManager webSocketEventListenerManager;
     private final BlockingQueue<TaskWrapper> retryQueue;
     private final ExecutorService executorService;
     private final ObjectMapper objectMapper;
@@ -33,8 +45,10 @@ public class SessionMessageBrokerService implements DisposableBean {
 
     public SessionMessageBrokerService(
             SessionRepository sessionRepository,
+            WebSocketEventListenerManager webSocketEventListenerManager,
             ObjectMapper objectMapper) {
         this.sessionRepository = sessionRepository;
+        this.webSocketEventListenerManager = webSocketEventListenerManager;
         this.objectMapper = objectMapper;
         this.retryQueue = new LinkedBlockingQueue<>();
         this.executorService = Executors.newScheduledThreadPool(
@@ -75,6 +89,32 @@ public class SessionMessageBrokerService implements DisposableBean {
     @Override
     public void destroy() throws Exception {
         this.executorService.shutdown();
+    }
+
+    @Override
+    public void onTextMessageReceive(WebSocketSession session, TextMessage message) throws Exception {
+        String sessionId = session.getId();
+        if (!this.sessionRepository.containsEntityByKey(sessionId)) {
+            return;
+        }
+        String payload = message.getPayload();
+        try {
+            JsonNode jsonData = this.objectMapper.readTree(payload);
+            WebSocketHandlerImpl webSocketHandler = (WebSocketHandlerImpl) this.webSocketEventListenerManager;
+            for (WebSocketJsonMessageReceiveListener listener :
+                    webSocketHandler.getListeners(WebSocketJsonMessageReceiveListener.class)) {
+                listener.onJsonMessageReceive(session, jsonData);
+            }
+        } catch (JsonProcessingException e) {
+            JsonNode errorMessageData = JsonNodeFactory.instance.objectNode()
+                    .put("sessionId", sessionId)
+                    .put("kind", "error")
+                    .put("message", "invalid payload")
+                    .put("timestamp", LocalDateTime
+                            .now()
+                            .format(DateTimeFormatter.ISO_DATE_TIME));
+            sendMessage(sessionId, errorMessageData.toString());
+        }
     }
 
     @PostConstruct
