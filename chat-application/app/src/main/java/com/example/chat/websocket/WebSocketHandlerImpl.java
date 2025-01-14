@@ -31,8 +31,8 @@ public class WebSocketHandlerImpl
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         String id = session.getId();
         logger.info("New session created: {}", id);
-        for (WebSocketSessionAddListener listener : this.listenerManager
-                .getWebSocketSessionAddListeners()) {
+        for (WebSocketSessionAddListener listener :
+                this.listenerManager.getWebSocketSessionAddListeners()) {
             listener.onSessionAdd(session);
         }
     }
@@ -41,8 +41,8 @@ public class WebSocketHandlerImpl
     public void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         String id = session.getId();
         logger.info("Session {} sent a text message: {}", id, message.getPayload());
-        for (WebSocketTextMessageReceiveListener listener : this.listenerManager
-                .getWebSocketTextMessageReceiveListeners()) {
+        for (WebSocketTextMessageReceiveListener listener :
+                this.listenerManager.getWebSocketTextMessageReceiveListeners()) {
             listener.onTextMessageReceive(session, message);
         }
     }
@@ -51,8 +51,8 @@ public class WebSocketHandlerImpl
     public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) throws Exception {
         String id = session.getId();
         logger.info("Session closed: {}", id);
-        for (WebSocketSessionRemoveListener listener : this.listenerManager
-                .getWebSocketSessionRemoveListeners()) {
+        for (WebSocketSessionRemoveListener listener :
+                this.listenerManager.getWebSocketSessionRemoveListeners()) {
             listener.onSessionRemove(session, closeStatus);
         }
     }
@@ -72,10 +72,19 @@ public class WebSocketHandlerImpl
         this.listenerManager.removeAllListeners();
     }
 
+    public <L extends WebSocketEventListener> List<L> getListeners(Class<L> listenerClass) {
+        return this.listenerManager.getListeners(listenerClass);
+    }
+
     private static class WebSocketEventListenerManagerImpl
             extends EventListenerManagerBase<WebSocketEventListener> {
 
         public WebSocketEventListenerManagerImpl() {
+        }
+
+        @Override
+        public <L extends WebSocketEventListener> List<L> getListeners(Class<L> listenerClass) {
+            return super.getListeners(listenerClass);
         }
 
         public List<WebSocketSessionAddListener> getWebSocketSessionAddListeners() {
