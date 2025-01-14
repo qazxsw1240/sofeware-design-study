@@ -4,12 +4,12 @@ import com.example.chat.event.websocket.WebSocketJsonMessageReceiveListener;
 import com.example.chat.event.websocket.WebSocketTextMessageReceiveListener;
 import com.example.chat.repository.SessionRepository;
 import com.example.chat.service.MessageBroker;
+import com.example.chat.util.JsonNodeUtils;
 import com.example.chat.websocket.WebSocketEventListenerManager;
 import com.example.chat.websocket.WebSocketHandlerImpl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import jakarta.annotation.PostConstruct;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,8 +20,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -110,13 +108,7 @@ public class SessionMessageBrokerService
                 listener.onJsonMessageReceive(session, jsonData);
             }
         } catch (JsonProcessingException e) {
-            JsonNode errorMessageData = JsonNodeFactory.instance.objectNode()
-                    .put("sessionId", sessionId)
-                    .put("kind", "error")
-                    .put("message", "invalid payload")
-                    .put("timestamp", LocalDateTime
-                            .now()
-                            .format(DateTimeFormatter.ISO_DATE_TIME));
+            JsonNode errorMessageData = JsonNodeUtils.crateErrorMessageData(sessionId, "invalid payload");
             sendMessage(sessionId, errorMessageData.toString());
         }
     }

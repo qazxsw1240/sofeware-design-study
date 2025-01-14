@@ -4,16 +4,16 @@ import com.example.chat.entity.User;
 import com.example.chat.entity.UserAuth;
 import com.example.chat.entity.UserAuthState;
 import com.example.chat.entity.websocket.WebSocketUserRegisterResponse;
-import com.example.chat.entity.websocket.WebSocketUsernameRequest;
 import com.example.chat.event.websocket.WebSocketJsonMessageReceiveListener;
 import com.example.chat.event.websocket.WebSocketSessionAddListener;
 import com.example.chat.event.websocket.WebSocketSessionRemoveListener;
 import com.example.chat.repository.SessionRepository;
 import com.example.chat.repository.UserAuthRepository;
 import com.example.chat.repository.UserRepository;
+import com.example.chat.service.MessageBroker;
+import com.example.chat.util.JsonNodeUtils;
 import com.example.chat.websocket.WebSocketEventListenerManager;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -23,7 +23,6 @@ import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.WebSocketSession;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 @Service
 public class UserAuthService
@@ -39,20 +38,19 @@ public class UserAuthService
     private final UserRepository userRepository;
     private final WebSocketEventListenerManager webSocketEventListenerManager;
 
-    private final SessionMessageBrokerService messageBrokerService;
+    private final MessageBroker messageBroker;
 
     public UserAuthService(
             SessionRepository sessionRepository,
             UserAuthRepository userAuthRepository,
             UserRepository userRepository,
-            SessionMessageBrokerService messageBrokerService,
-            ObjectMapper objectMapper,
+            MessageBroker messageBroker,
             WebSocketEventListenerManager webSocketEventListenerManager) {
         this.sessionRepository = sessionRepository;
         this.userAuthRepository = userAuthRepository;
         this.userRepository = userRepository;
         this.webSocketEventListenerManager = webSocketEventListenerManager;
-        this.messageBrokerService = messageBrokerService;
+        this.messageBroker = messageBroker;
         this.webSocketEventListenerManager.addListener(this);
     }
 
@@ -61,9 +59,10 @@ public class UserAuthService
         String sessionId = session.getId();
         this.sessionRepository.addEntity(session);
         this.userAuthRepository.addEntity(new UserAuth(sessionId, UserAuthState.IN_PROGRESS));
-        this.messageBrokerService.sendMessage(
-                sessionId,
-                new WebSocketUsernameRequest(sessionId, "require username"));
+        JsonNode jsonData = JsonNodeFactory.instance.objectNode()
+                .put("kind", "Auth#createUser")
+                .put("sessionId", sessionId);
+        this.messageBroker.sendMessage(sessionId, jsonData.toString());
     }
 
     @Override
@@ -83,20 +82,13 @@ public class UserAuthService
                 .isPresent()) {
             return;
         }
-        if (!jsonData.get("kind").asText().equals("createUser")) {
+        if (!jsonData.get("kind").asText().equals("Auth#createUser")) {
             return;
         }
         String payloadSessionId = jsonData.get("sessionId").asText();
         if (!payloadSessionId.equals(sessionId)) {
-            JsonNode errorMessageData = JsonNodeFactory.instance
-                    .objectNode()
-                    .put("sessionId", sessionId)
-                    .put("kind", "error")
-                    .put("message", "invalid session")
-                    .put("timestamp", LocalDateTime
-                            .now()
-                            .format(DateTimeFormatter.ISO_DATE_TIME));
-            this.messageBrokerService.sendMessage(sessionId, errorMessageData.toString());
+            JsonNode errorMessageData = JsonNodeUtils.crateErrorMessageData(sessionId, "invalid session");
+            this.messageBroker.sendMessage(sessionId, errorMessageData.toString());
             return;
         }
         this.userAuthRepository.updateUserAuth(new UserAuth(sessionId, UserAuthState.SUCCESS));
@@ -117,7 +109,7 @@ public class UserAuthService
         User user = new User(session, username, LocalDateTime.now());
         this.userRepository.addEntity(user);
         logger.info("Authenticated User {} has joined.", username);
-        this.messageBrokerService.sendMessage(sessionId, new WebSocketUserRegisterResponse(user));
+        this.messageBroker.sendMessage(sessionId, new WebSocketUserRegisterResponse(user));
     }
 
 }
