@@ -1,5 +1,5 @@
 arguments=--init-script /var/folders/lr/rfdvmjfd4qzgn6j84088_2b00000gn/T/db3b08fc4a9ef609cb16b96b200fa13e563f396e9bb1ed0905fdab7bc3bc513b.gradle
-auto.sync=false
+auto.sync=true
 build.scans.enabled=false
 connection.gradle.distribution=GRADLE_DISTRIBUTION(WRAPPER)
 connection.project.dir=
