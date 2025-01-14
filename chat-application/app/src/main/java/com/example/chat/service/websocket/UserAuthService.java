@@ -3,7 +3,6 @@ package com.example.chat.service.websocket;
 import com.example.chat.entity.User;
 import com.example.chat.entity.UserAuth;
 import com.example.chat.entity.UserAuthState;
-import com.example.chat.entity.websocket.WebSocketUserRegisterResponse;
 import com.example.chat.event.websocket.WebSocketJsonMessageReceiveListener;
 import com.example.chat.event.websocket.WebSocketSessionAddListener;
 import com.example.chat.event.websocket.WebSocketSessionRemoveListener;
@@ -23,6 +22,7 @@ import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.WebSocketSession;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Service
 public class UserAuthService
@@ -109,7 +109,14 @@ public class UserAuthService
         User user = new User(session, username, LocalDateTime.now());
         this.userRepository.addEntity(user);
         logger.info("Authenticated User {} has joined.", username);
-        this.messageBroker.sendMessage(sessionId, new WebSocketUserRegisterResponse(user));
+        JsonNode responseData = JsonNodeFactory.instance.objectNode()
+                .put("kind", "Auth#authUser")
+                .put("sessionId", user.getSessionId())
+                .put("username", user.getName())
+                .put("joinedTime", user
+                        .getJoinedTime()
+                        .format(DateTimeFormatter.ISO_DATE_TIME));
+        this.messageBroker.sendMessage(sessionId, responseData.toString());
     }
 
 }
