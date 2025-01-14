@@ -22,6 +22,11 @@ public final class SessionRepositoryImpl implements SessionRepository {
     }
 
     @Override
+    public long getCount() {
+        return this.sessions.size();
+    }
+
+    @Override
     public List<WebSocketSession> getAllEntities() {
         return this.sessions
                 .values()

@@ -1,8 +1,6 @@
 package com.example.chat.repository;
 
 import com.example.chat.entity.User;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -11,21 +9,20 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 @Repository
-public class UserRepositoryImpl implements UserRepository {
+public class UserRepositoryImpl
+        extends AbstractSessionBasedRepository<User>
+        implements UserRepository {
 
-    private static final Logger logger = LogManager.getLogger(UserRepositoryImpl.class);
-
-    private final SessionRepository sessionRepository;
     private final Map<String, User> users;
 
     public UserRepositoryImpl(SessionRepository sessionRepository) {
-        this.sessionRepository = sessionRepository;
+        super(sessionRepository, User::getSessionId, User.class);
         this.users = new ConcurrentSkipListMap<>();
     }
 
     @Override
-    public SessionRepository getSessionRepository() {
-        return this.sessionRepository;
+    public long getCount() {
+        return this.users.size();
     }
 
     @Override
@@ -37,42 +34,32 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
-    public boolean containsEntityByKey(String key) {
-        return this.users.containsKey(key);
+    protected boolean containsEntityByKeyBasedOnSession(String sessionId) {
+        return this.users.containsKey(sessionId);
     }
 
     @Override
-    public Optional<User> findEntityByKey(String key) {
-        User user = this.users.get(key);
-        if (user != null) {
-            logger.info("Found user with session ID: {}", key);
-        }
-        return Optional.ofNullable(user);
+    protected Optional<User> findEntityByKeyBasedOnSession(String sessionId) {
+        return Optional.ofNullable(this.users.get(sessionId));
     }
 
     @Override
-    public void addEntity(User entity) {
+    protected boolean addEntityBasedOnSession(User entity) {
         String sessionId = entity.getSessionId();
         if (this.users.containsKey(sessionId)) {
-            return;
+            return false;
         }
         this.users.put(sessionId, entity);
-        logger.info("Stored user with session ID: {}", sessionId);
+        return true;
     }
 
     @Override
-    public void removeEntity(User entity) {
-        String sessionId = entity.getSessionId();
-        removeEntityByKey(sessionId);
-    }
-
-    @Override
-    public void removeEntityByKey(String key) {
-        if (!this.users.containsKey(key)) {
-            return;
+    protected boolean removeEntityByKeyBasedOnSession(String sessionId) {
+        if (!this.users.containsKey(sessionId)) {
+            return false;
         }
-        this.users.remove(key);
-        logger.info("Removed user with session ID: {}", key);
+        this.users.remove(sessionId);
+        return true;
     }
 
 }

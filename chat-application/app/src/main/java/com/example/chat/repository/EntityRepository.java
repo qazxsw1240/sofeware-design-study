@@ -5,6 +5,8 @@ import java.util.Optional;
 
 public interface EntityRepository<T, K extends Comparable<K>> {
 
+    public long getCount();
+
     public List<T> getAllEntities();
 
     public boolean containsEntityByKey(K key);

@@ -1,8 +1,19 @@
 package com.example.chat.repository;
 
-public interface SessionBasedRepository<T, K extends Comparable<K>>
-        extends EntityRepository<T, K> {
+import java.util.Optional;
+
+public interface SessionBasedRepository<T> extends EntityRepository<T, String> {
 
     public SessionRepository getSessionRepository();
+
+    public boolean containsEntityByKey(String sessionId);
+
+    public Optional<T> findEntityByKey(String sessionId);
+
+    public void addEntity(T entity);
+
+    public void removeEntity(T entity);
+
+    public void removeEntityByKey(String sessionId);
 
 }
