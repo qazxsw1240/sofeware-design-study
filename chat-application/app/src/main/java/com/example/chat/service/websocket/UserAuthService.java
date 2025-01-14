@@ -3,10 +3,8 @@ package com.example.chat.service.websocket;
 import com.example.chat.entity.User;
 import com.example.chat.entity.UserAuth;
 import com.example.chat.entity.UserAuthState;
-import com.example.chat.entity.websocket.WebSocketExceptionMessage;
 import com.example.chat.entity.websocket.WebSocketUserRegisterResponse;
 import com.example.chat.entity.websocket.WebSocketUsernameRequest;
-import com.example.chat.entity.websocket.WebSocketUsernameResponse;
 import com.example.chat.event.websocket.WebSocketSessionAddListener;
 import com.example.chat.event.websocket.WebSocketSessionRemoveListener;
 import com.example.chat.event.websocket.WebSocketTextMessageReceiveListener;
@@ -15,7 +13,9 @@ import com.example.chat.repository.UserAuthRepository;
 import com.example.chat.repository.UserRepository;
 import com.example.chat.websocket.WebSocketEventListenerManager;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.DisposableBean;
@@ -25,6 +25,7 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Service
 public class UserAuthService
@@ -60,7 +61,7 @@ public class UserAuthService
     }
 
     @Override
-    public void onSessionAdd(WebSocketSession session) {
+    public void onSessionAdd(WebSocketSession session) throws Exception {
         String sessionId = session.getId();
         this.sessionRepository.addEntity(session);
         this.userAuthRepository.addEntity(new UserAuth(sessionId, UserAuthState.IN_PROGRESS));
@@ -70,7 +71,7 @@ public class UserAuthService
     }
 
     @Override
-    public void onSessionRemove(WebSocketSession session, CloseStatus closeStatus) {
+    public void onSessionRemove(WebSocketSession session, CloseStatus closeStatus) throws Exception {
         String sessionId = session.getId();
         this.userRepository.removeEntityByKey(sessionId);
         this.userAuthRepository.removeEntityByKey(sessionId);
@@ -78,23 +79,49 @@ public class UserAuthService
     }
 
     @Override
-    public void onTextMessageReceive(WebSocketSession session, TextMessage message) {
+    public void onTextMessageReceive(WebSocketSession session, TextMessage message) throws Exception {
         String sessionId = session.getId();
         if (!this.sessionRepository.containsEntityByKey(sessionId)) {
             return;
         }
+        if (this.userAuthRepository
+                .findEntityByKey(sessionId)
+                .filter(auth -> auth.getUserAuthState() == UserAuthState.SUCCESS)
+                .isPresent()) {
+            return;
+        }
         String payload = message.getPayload();
         try {
-            WebSocketUsernameResponse response = this.objectMapper.readValue(payload, WebSocketUsernameResponse.class);
-            if (!response.getSessionId().equals(sessionId)) {
+            JsonNode jsonData = this.objectMapper.readTree(payload);
+            if (!jsonData.get("kind").asText().equals("createUser")) {
+                return;
+            }
+            String payloadSessionId = jsonData.get("sessionId").asText();
+            if (!payloadSessionId.equals(sessionId)) {
+                JsonNode errorMessageData = JsonNodeFactory.instance
+                        .objectNode()
+                        .put("sessionId", sessionId)
+                        .put("kind", "error")
+                        .put("message", "invalid session")
+                        .put("timestamp", LocalDateTime
+                                .now()
+                                .format(DateTimeFormatter.ISO_DATE_TIME));
                 this.messageBrokerService.sendMessage(
                         sessionId,
-                        new WebSocketExceptionMessage(sessionId, "invalid session"));
+                        errorMessageData.toString());
                 return;
             }
             this.userAuthRepository.updateUserAuth(new UserAuth(sessionId, UserAuthState.SUCCESS));
-            createAuthenticatedUser(response);
-        } catch (JsonProcessingException ignored) {
+            createAuthenticatedUser(jsonData);
+        } catch (JsonProcessingException e) {
+            JsonNode errorMessageData = JsonNodeFactory.instance.objectNode()
+                    .put("sessionId", sessionId)
+                    .put("kind", "error")
+                    .put("message", "invalid payload")
+                    .put("timestamp", LocalDateTime
+                            .now()
+                            .format(DateTimeFormatter.ISO_DATE_TIME));
+            this.messageBrokerService.sendMessage(sessionId, errorMessageData.toString());
         }
     }
 
@@ -103,15 +130,15 @@ public class UserAuthService
         this.webSocketEventListenerManager.removeListener(this);
     }
 
-    private void createAuthenticatedUser(WebSocketUsernameResponse response) {
-        String sessionId = response.getSessionId();
-        String username = response.getUsername();
+    private void createAuthenticatedUser(JsonNode jsonData) {
+        String sessionId = jsonData.get("sessionId").asText();
+        String username = jsonData.get("username").asText();
         WebSocketSession session = this.sessionRepository
                 .findEntityByKey(sessionId)
                 .orElseThrow();
         User user = new User(session, username, LocalDateTime.now());
         this.userRepository.addEntity(user);
-        logger.info("Authenticated user {} has joined.", username);
+        logger.info("Authenticated User {} has joined.", username);
         this.messageBrokerService.sendMessage(sessionId, new WebSocketUserRegisterResponse(user));
     }
 
