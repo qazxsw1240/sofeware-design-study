@@ -101,6 +101,7 @@ public class RoomLifecycleService implements WebSocketJsonMessageReceiveListener
 
     public void fetchRooms(String sessionId) {
         ObjectNode jsonData = JsonNodeFactory.instance.objectNode()
+                .put("kind", "Room#fetchRooms")
                 .put("sessionId", sessionId);
         ArrayNode rooms = jsonData.putArray("rooms");
         rooms.addAll(this.roomRepository
@@ -125,6 +126,7 @@ public class RoomLifecycleService implements WebSocketJsonMessageReceiveListener
         Room room = new Room(UUID.randomUUID(), roomName, new CopyOnWriteArrayList<>());
         this.roomRepository.addEntity(room);
         JsonNode responseData = JsonNodeFactory.instance.objectNode()
+                .put("kind", "Room#createRoom")
                 .put("roomId", room.getId().toString())
                 .put("name", room.getName());
         this.messageBroker.sendMessage(sessionId, responseData.toString());
@@ -194,6 +196,7 @@ public class RoomLifecycleService implements WebSocketJsonMessageReceiveListener
         room.getUsers().remove(user);
         if (room.getUsers().isEmpty()) {
             this.roomRepository.removeEntity(room);
+            logger.info("Room {} removed because no users have joined it.", roomId);
         }
     }
 
@@ -225,7 +228,7 @@ public class RoomLifecycleService implements WebSocketJsonMessageReceiveListener
                         .format(DateTimeFormatter.ISO_DATE_TIME));
         Room room = roomOptional.get();
         for (User u : room.getUsers()) {
-            this.messageBroker.sendMessage(u.getSessionId(), jsonData.toString());
+            this.messageBroker.sendMessage(u.getSessionId(), responseData.toString());
         }
     }
 
