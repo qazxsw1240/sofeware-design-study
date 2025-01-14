@@ -10,7 +10,6 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
-import com.example.chat.event.EventListenerManager;
 import com.example.chat.event.EventListenerManagerBase;
 import com.example.chat.event.websocket.WebSocketEventListener;
 import com.example.chat.event.websocket.WebSocketSessionAddListener;
@@ -19,14 +18,14 @@ import com.example.chat.event.websocket.WebSocketTextMessageReceiveListener;
 
 public class WebSocketHandlerImpl
         extends TextWebSocketHandler
-        implements EventListenerManager<WebSocketEventListener>, DisposableBean {
+        implements WebSocketEventListenerManager, DisposableBean {
 
     private static final Logger logger = LogManager.getLogger(WebSocketHandlerImpl.class);
 
-    private final WebSocketEventListenerManager listenerManager;
+    private final WebSocketEventListenerManagerImpl listenerManager;
 
     public WebSocketHandlerImpl() {
-        this.listenerManager = new WebSocketEventListenerManager();
+        this.listenerManager = new WebSocketEventListenerManagerImpl();
     }
 
     @Override
@@ -76,10 +75,10 @@ public class WebSocketHandlerImpl
         this.listenerManager.removeAllListeners();
     }
 
-    private static class WebSocketEventListenerManager
+    private static class WebSocketEventListenerManagerImpl
             extends EventListenerManagerBase<WebSocketEventListener> {
 
-        public WebSocketEventListenerManager() {
+        public WebSocketEventListenerManagerImpl() {
         }
 
         public List<WebSocketSessionAddListener> getWebSocketSessionAddListeners() {
