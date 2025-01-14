@@ -54,6 +54,7 @@ public class SessionMessageBrokerService
         this.executorService = Executors.newScheduledThreadPool(
                 12,
                 new CustomizableThreadFactory("Session Message Broker Service"));
+        this.webSocketEventListenerManager.addListener(this);
         this.executorService.submit(this::exhaustTask);
     }
 
@@ -88,6 +89,7 @@ public class SessionMessageBrokerService
 
     @Override
     public void destroy() throws Exception {
+        this.webSocketEventListenerManager.removeListener(this);
         this.executorService.shutdown();
     }
 
