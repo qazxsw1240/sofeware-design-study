@@ -5,6 +5,6 @@ import org.springframework.web.socket.WebSocketSession;
 
 public interface WebSocketSessionRemoveListener extends WebSocketEventListener {
 
-    public void onSessionRemove(WebSocketSession session, CloseStatus closeStatus);
+    public void onSessionRemove(WebSocketSession session, CloseStatus closeStatus) throws Exception;
 
 }

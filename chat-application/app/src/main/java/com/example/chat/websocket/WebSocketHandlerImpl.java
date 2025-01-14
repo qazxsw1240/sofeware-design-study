@@ -1,7 +1,10 @@
 package com.example.chat.websocket;
 
-import java.util.List;
-
+import com.example.chat.event.EventListenerManagerBase;
+import com.example.chat.event.websocket.WebSocketEventListener;
+import com.example.chat.event.websocket.WebSocketSessionAddListener;
+import com.example.chat.event.websocket.WebSocketSessionRemoveListener;
+import com.example.chat.event.websocket.WebSocketTextMessageReceiveListener;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.DisposableBean;
@@ -10,11 +13,7 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
-import com.example.chat.event.EventListenerManagerBase;
-import com.example.chat.event.websocket.WebSocketEventListener;
-import com.example.chat.event.websocket.WebSocketSessionAddListener;
-import com.example.chat.event.websocket.WebSocketSessionRemoveListener;
-import com.example.chat.event.websocket.WebSocketTextMessageReceiveListener;
+import java.util.List;
 
 public class WebSocketHandlerImpl
         extends TextWebSocketHandler
@@ -32,32 +31,30 @@ public class WebSocketHandlerImpl
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         String id = session.getId();
         logger.info("New session created: {}", id);
-        this.listenerManager
-                .getWebSocketSessionAddListeners()
-                .forEach(listener -> listener.onSessionAdd(session));
+        for (WebSocketSessionAddListener listener : this.listenerManager
+                .getWebSocketSessionAddListeners()) {
+            listener.onSessionAdd(session);
+        }
     }
 
     @Override
     public void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         String id = session.getId();
         logger.info("Session {} sent a text message: {}", id, message.getPayload());
-        this.listenerManager
-                .getWebSocketTextMessageReceiveListeners()
-                .forEach(listener -> listener.onTextMessageReceive(session, message));
+        for (WebSocketTextMessageReceiveListener listener : this.listenerManager
+                .getWebSocketTextMessageReceiveListeners()) {
+            listener.onTextMessageReceive(session, message);
+        }
     }
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) throws Exception {
         String id = session.getId();
         logger.info("Session closed: {}", id);
-        this.listenerManager
-                .getWebSocketSessionRemoveListeners()
-                .forEach(listener -> listener.onSessionRemove(session, closeStatus));
-    }
-
-    @Override
-    public boolean supportsPartialMessages() {
-        return false;
+        for (WebSocketSessionRemoveListener listener : this.listenerManager
+                .getWebSocketSessionRemoveListeners()) {
+            listener.onSessionRemove(session, closeStatus);
+        }
     }
 
     @Override

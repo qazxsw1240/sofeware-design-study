@@ -4,6 +4,6 @@ import org.springframework.web.socket.WebSocketSession;
 
 public interface WebSocketSessionAddListener extends WebSocketEventListener {
 
-    public void onSessionAdd(WebSocketSession session);
+    public void onSessionAdd(WebSocketSession session) throws Exception;
 
 }
