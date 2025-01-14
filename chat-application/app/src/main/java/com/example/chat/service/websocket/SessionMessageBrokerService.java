@@ -3,6 +3,7 @@ package com.example.chat.service.websocket;
 import com.example.chat.event.websocket.WebSocketJsonMessageReceiveListener;
 import com.example.chat.event.websocket.WebSocketTextMessageReceiveListener;
 import com.example.chat.repository.SessionRepository;
+import com.example.chat.service.MessageBroker;
 import com.example.chat.websocket.WebSocketEventListenerManager;
 import com.example.chat.websocket.WebSocketHandlerImpl;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -29,7 +30,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 public class SessionMessageBrokerService
-        implements WebSocketTextMessageReceiveListener,
+        implements MessageBroker,
+                   WebSocketTextMessageReceiveListener,
                    DisposableBean {
 
     private static final Logger logger = LogManager.getLogger(SessionMessageBrokerService.class);
@@ -62,6 +64,18 @@ public class SessionMessageBrokerService
         this.retryCount = retryCount;
     }
 
+    public void sendMessage(String sessionId, String message) {
+        enqueueTask(() -> {
+            if (!this.sessionRepository.containsEntityByKey(sessionId)) {
+                return;
+            }
+            WebSocketSession session = this.sessionRepository
+                    .findEntityByKey(sessionId)
+                    .orElseThrow();
+            session.sendMessage(new TextMessage(message));
+        });
+    }
+
     public void sendMessage(String sessionId, Object message) {
         enqueueTask(() -> {
             if (!this.sessionRepository.containsEntityByKey(sessionId)) {
@@ -72,18 +86,6 @@ public class SessionMessageBrokerService
                     .findEntityByKey(sessionId)
                     .orElseThrow();
             session.sendMessage(new TextMessage(payload));
-        });
-    }
-
-    public void sendMessage(String sessionId, String message) {
-        enqueueTask(() -> {
-            if (!this.sessionRepository.containsEntityByKey(sessionId)) {
-                return;
-            }
-            WebSocketSession session = this.sessionRepository
-                    .findEntityByKey(sessionId)
-                    .orElseThrow();
-            session.sendMessage(new TextMessage(message));
         });
     }
 
