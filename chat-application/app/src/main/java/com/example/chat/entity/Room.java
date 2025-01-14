@@ -20,7 +20,7 @@ public class Room implements Entity, Serializable {
         return this.id;
     }
 
-    public String getNames() {
+    public String getName() {
         return this.name;
     }
 
