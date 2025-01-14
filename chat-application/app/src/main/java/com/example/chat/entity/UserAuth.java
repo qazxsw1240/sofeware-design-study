@@ -1,6 +1,8 @@
 package com.example.chat.entity;
 
-public class UserAuth {
+import java.io.Serializable;
+
+public class UserAuth implements Entity, Serializable {
 
     private final String sessionId;
     private final UserAuthState userAuthState;
@@ -16,6 +18,11 @@ public class UserAuth {
 
     public UserAuthState getUserAuthState() {
         return this.userAuthState;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("UserAuth[sessionId='%s', userAuthState=%s]", this.sessionId, this.userAuthState);
     }
 
 }

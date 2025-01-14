@@ -33,4 +33,12 @@ public class User implements Entity, Serializable {
         return this.joinedTime;
     }
 
+    @Override
+    public String toString() {
+        return String.format("User[sessionId='%s', name='%s', joinedTime=%s]",
+                this.session.getId(),
+                this.name,
+                this.joinedTime);
+    }
+
 }

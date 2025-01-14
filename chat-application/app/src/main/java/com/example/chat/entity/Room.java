@@ -28,4 +28,9 @@ public class Room implements Entity, Serializable {
         return this.users;
     }
 
+    @Override
+    public String toString() {
+        return String.format("Room[id=%s, name='%s', users=%s]", this.id, this.name, this.users);
+    }
+
 }
