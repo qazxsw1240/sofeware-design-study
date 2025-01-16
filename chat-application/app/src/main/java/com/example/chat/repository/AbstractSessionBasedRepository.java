@@ -1,11 +1,11 @@
 package com.example.chat.repository;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public abstract class AbstractSessionBasedRepository<T> implements SessionBasedRepository<T> {
 

@@ -1,12 +1,13 @@
 package com.example.chat.repository;
 
-import com.example.chat.entity.UserAuth;
-import org.springframework.stereotype.Repository;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListMap;
+
+import org.springframework.stereotype.Repository;
+
+import com.example.chat.entity.UserAuth;
 
 @Repository
 public class UserAuthRepositoryImpl

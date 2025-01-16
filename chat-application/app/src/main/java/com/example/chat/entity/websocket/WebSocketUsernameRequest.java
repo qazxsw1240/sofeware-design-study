@@ -1,5 +1,6 @@
 package com.example.chat.entity.websocket;
 
+@Deprecated
 public class WebSocketUsernameRequest extends AbstractWebSocketRequest {
     
     private String status;

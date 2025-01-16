@@ -1,5 +1,20 @@
 package com.example.chat.service.websocket;
 
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.web.socket.TextMessage;
+import org.springframework.web.socket.WebSocketSession;
+
 import com.example.chat.event.websocket.WebSocketJsonMessageReceiveListener;
 import com.example.chat.event.websocket.WebSocketTextMessageReceiveListener;
 import com.example.chat.repository.SessionRepository;
@@ -10,21 +25,8 @@ import com.example.chat.websocket.WebSocketHandlerImpl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.annotation.PostConstruct;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.DisposableBean;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
-import org.springframework.stereotype.Service;
-import org.springframework.web.socket.TextMessage;
-import org.springframework.web.socket.WebSocketSession;
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicInteger;
+import jakarta.annotation.PostConstruct;
 
 @Service
 public class SessionMessageBrokerService
@@ -62,6 +64,7 @@ public class SessionMessageBrokerService
         this.retryCount = retryCount;
     }
 
+    @Override
     public void sendMessage(String sessionId, String message) {
         enqueueTask(() -> {
             if (!this.sessionRepository.containsEntityByKey(sessionId)) {
@@ -74,6 +77,7 @@ public class SessionMessageBrokerService
         });
     }
 
+    @Override
     public void sendMessage(String sessionId, Object message) {
         enqueueTask(() -> {
             if (!this.sessionRepository.containsEntityByKey(sessionId)) {

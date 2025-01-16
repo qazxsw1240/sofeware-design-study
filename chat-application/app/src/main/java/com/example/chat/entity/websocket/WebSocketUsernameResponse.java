@@ -1,5 +1,6 @@
 package com.example.chat.entity.websocket;
 
+@Deprecated
 public class WebSocketUsernameResponse implements WebSocketMessage {
 
     private String sessionId;

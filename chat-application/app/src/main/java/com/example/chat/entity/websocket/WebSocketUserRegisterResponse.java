@@ -1,9 +1,10 @@
 package com.example.chat.entity.websocket;
 
-import com.example.chat.entity.User;
-
 import java.time.LocalDateTime;
 
+import com.example.chat.entity.User;
+
+@Deprecated
 public class WebSocketUserRegisterResponse implements WebSocketMessage {
 
     private String sessionId;

@@ -1,20 +1,23 @@
 package com.example.chat.websocket;
 
-import com.example.chat.event.EventListenerManagerBase;
-import com.example.chat.event.websocket.WebSocketEventListener;
-import com.example.chat.event.websocket.WebSocketSessionAddListener;
-import com.example.chat.event.websocket.WebSocketSessionRemoveListener;
-import com.example.chat.event.websocket.WebSocketTextMessageReceiveListener;
+import java.util.List;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
-import java.util.List;
+import com.example.chat.event.EventListenerManagerBase;
+import com.example.chat.event.websocket.WebSocketEventListener;
+import com.example.chat.event.websocket.WebSocketSessionAddListener;
+import com.example.chat.event.websocket.WebSocketSessionRemoveListener;
+import com.example.chat.event.websocket.WebSocketTextMessageReceiveListener;
 
+@Component
 public class WebSocketHandlerImpl
         extends TextWebSocketHandler
         implements WebSocketEventListenerManager, DisposableBean {

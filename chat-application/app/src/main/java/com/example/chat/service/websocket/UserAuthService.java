@@ -1,5 +1,15 @@
 package com.example.chat.service.websocket;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.DisposableBean;
+import org.springframework.stereotype.Service;
+import org.springframework.web.socket.CloseStatus;
+import org.springframework.web.socket.WebSocketSession;
+
 import com.example.chat.entity.User;
 import com.example.chat.entity.UserAuth;
 import com.example.chat.entity.UserAuthState;
@@ -14,15 +24,6 @@ import com.example.chat.util.JsonNodeUtils;
 import com.example.chat.websocket.WebSocketEventListenerManager;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.DisposableBean;
-import org.springframework.stereotype.Service;
-import org.springframework.web.socket.CloseStatus;
-import org.springframework.web.socket.WebSocketSession;
-
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 @Service
 public class UserAuthService

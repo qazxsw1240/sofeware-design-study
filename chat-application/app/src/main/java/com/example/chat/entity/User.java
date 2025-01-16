@@ -1,9 +1,9 @@
 package com.example.chat.entity;
 
-import org.springframework.web.socket.WebSocketSession;
-
 import java.io.Serializable;
 import java.time.LocalDateTime;
+
+import org.springframework.web.socket.WebSocketSession;
 
 public class User implements Entity, Serializable {
 
