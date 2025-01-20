@@ -46,7 +46,7 @@ class View:
             text="Increase Value",
             width=15,
             height=1,
-            command=self.on_decrease_button_click,
+            command=self.on_increase_button_click,
             font=FONT)
         self.decrease_button = Button(
             window,
