@@ -4,35 +4,11 @@ from tkinter.font import Font
 from typing import Callable, Optional, Self, override
 
 
-class ValueHolder[T](ABC):
-    @abstractmethod
-    def set_binder(self: Self, binder: Callable[[T], None]) -> None:
-        pass
-
-
-class Model(ValueHolder[int]):
+class Model:
     value: int
-    binder: Optional[Callable[[int], None]]
 
     def __init__(self: Self, value: int = 0) -> None:
         self.value = value
-        self.binder = None
-
-    @override
-    def set_binder(self: Self, binder: Callable[[int], None]) -> None:
-        self.binder = binder
-        if self.binder is not None:
-            self.binder(self.value)
-
-    def increase(self: Self) -> None:
-        self.value += 1
-        if self.binder is not None:
-            self.binder(self.value)
-
-    def decrease(self: Self) -> None:
-        self.value -= 1
-        if self.binder is not None:
-            self.binder(self.value)
 
 
 class Controller:
@@ -42,15 +18,16 @@ class Controller:
         self.model = model
 
     def increase(self: Self) -> None:
-        self.model.increase()
+        self.model.value += 1
 
     def decrease(self: Self) -> None:
-        self.model.decrease()
+        self.model.value -= 1
 
 
 class View:
 
     model: Model
+    controller: Controller
     label: Label
     increase_button: Button
     decrease_button: Button
@@ -62,30 +39,40 @@ class View:
             controller: Controller) -> None:
         FONT = Font(size=16)
         self.model = model
+        self.controller = controller
         self.label = Label(window, width=15, height=5, font=FONT)
         self.increase_button = Button(
             window,
             text="Increase Value",
             width=15,
             height=1,
-            command=controller.increase,
+            command=self.on_decrease_button_click,
             font=FONT)
         self.decrease_button = Button(
             window,
             text="Decrease Value",
             width=15,
             height=1,
-            command=controller.decrease,
+            command=self.on_decrease_button_click,
             font=FONT)
-        self.model.set_binder(self.display_value)
+
+        self.render_label()
 
     def pack(self: Self) -> None:
         self.label.pack()
         self.increase_button.pack()
         self.decrease_button.pack()
 
-    def display_value(self: Self, value: int) -> None:
-        self.label.config(text=f"current value: {value}")
+    def on_increase_button_click(self: Self) -> None:
+        self.controller.increase()
+        self.render_label()
+
+    def on_decrease_button_click(self: Self) -> None:
+        self.controller.decrease()
+        self.render_label()
+
+    def render_label(self: Self) -> None:
+        self.label.config(text=f"current value: {self.model.value}")
 
 
 class Application:
